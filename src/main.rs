@@ -1,5 +1,3 @@
-pub mod data;
-
 fn main() {
-    println!("Hello, world!");
+    // Non-CLI binary entrypoint. Use the library API from src/lib.rs.
 }

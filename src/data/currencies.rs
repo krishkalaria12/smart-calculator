@@ -342,46 +342,38 @@ pub static CRYPTO_ALIASES: LazyLock<HashMap<&'static str, &'static str>> = LazyL
     map
 });
 
-pub fn resolve_fiat(token: String) -> Option<String> {
+pub fn resolve_fiat(token: &str) -> Option<String> {
     let upper = token.to_uppercase();
-    if let Some(&val) = FIAT_CURRENCIES.pin().get(upper.as_str()) {
-        return Some(val.to_string());
+    if FIAT_CURRENCIES.pin().contains_key(upper.as_str()) {
+        return Some(upper);
     }
 
     let lower = token.to_lowercase();
-    if let Some(&val) = FIAT_ALIASES.pin().get(lower.as_str()) {
-        return Some(val.to_string());
+    if let Some(&code) = FIAT_ALIASES.pin().get(lower.as_str()) {
+        return Some(code.to_string());
     }
 
-    return None;
+    None
 }
 
-pub fn resolve_crypto(token: String) -> Option<String> {
+pub fn resolve_crypto(token: &str) -> Option<String> {
     let upper = token.to_uppercase();
-    if let Some(&val) = CRYPTO_CURRENCIES.pin().get(upper.as_str()) {
-        return Some(val.to_string());
+    if CRYPTO_CURRENCIES.pin().contains_key(upper.as_str()) {
+        return Some(upper);
     }
 
     let lower = token.to_lowercase();
-    if let Some(&val) = CRYPTO_ALIASES.pin().get(lower.as_str()) {
-        return Some(val.to_string());
+    if let Some(&code) = CRYPTO_ALIASES.pin().get(lower.as_str()) {
+        return Some(code.to_string());
     }
 
-    return None;
+    None
 }
 
-pub fn is_currency(token: String) -> bool {
-    if let Some(_) = resolve_fiat(token) {
-        return true;
-    }
-
-    false
+pub fn is_currency(token: &str) -> bool {
+    resolve_fiat(token).is_some()
 }
 
-pub fn is_crypto(token: String) -> bool {
-    if let Some(_) = resolve_crypto(token) {
-        return true;
-    }
-
-    false
+pub fn is_crypto(token: &str) -> bool {
+    resolve_crypto(token).is_some()
 }

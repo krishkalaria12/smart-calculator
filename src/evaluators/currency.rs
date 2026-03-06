@@ -17,9 +17,9 @@ pub async fn evaluate_currency(
     amount: f64,
     from: String,
     to: String,
-    provider: Option<&impl RateProvider>,
+    provider: Option<&dyn RateProvider>,
     locale: Option<String>,
-    precision: Option<f64>,
+    precision: Option<u8>,
 ) -> Result<CalculatorResult> {
     let from = normalize_code(from);
     let to = normalize_code(to);
@@ -55,9 +55,9 @@ pub async fn evaluate_crypto(
     amount: f64,
     from: String,
     to: String,
-    provider: Option<&impl RateProvider>,
+    provider: Option<&dyn RateProvider>,
     locale: Option<String>,
-    precision: Option<f64>,
+    precision: Option<u8>,
 ) -> Result<CalculatorResult> {
     let from = normalize_code(from);
     let to = normalize_code(to);
@@ -95,13 +95,8 @@ pub async fn evaluate_crypto(
     })
 }
 
-fn normalize_precision(precision: Option<f64>, default: u8) -> u8 {
-    let value = precision.unwrap_or(default as f64);
-    if value.is_finite() {
-        value.round().clamp(1.0, 21.0) as u8
-    } else {
-        default
-    }
+fn normalize_precision(precision: Option<u8>, default: u8) -> u8 {
+    precision.unwrap_or(default).clamp(1, 21)
 }
 
 fn normalize_code(code: String) -> String {
@@ -113,7 +108,7 @@ fn normalize_locale(locale: Option<String>) -> String {
     raw.trim().replace('_', "-")
 }
 
-fn require_provider<'a>(provider: Option<&'a impl RateProvider>) -> Result<&'a impl RateProvider> {
+fn require_provider(provider: Option<&dyn RateProvider>) -> Result<&dyn RateProvider> {
     provider.ok_or_else(|| EvaluatorError::RequiredParameter("provider".to_string()))
 }
 
@@ -155,7 +150,7 @@ fn format_localized_number(value: f64, locale_str: &str, precision: u8) -> Optio
     let locale = locale_str
         .parse::<Locale>()
         .ok()
-        .unwrap_or_else(|| locale!("en-US"));
+        .unwrap_or(locale!("en-US"));
     let formatter = DecimalFormatter::try_new(locale.into(), Default::default()).ok()?;
     let decimal =
         FixedDecimal::try_from_f64(value, FloatPrecision::SignificantDigits(precision)).ok()?;
