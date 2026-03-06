@@ -1,4 +1,4 @@
-use chrono_tz::Tz;
+use icu::time::zone::iana::IanaParser;
 use papaya::HashMap;
 use std::sync::LazyLock;
 
@@ -441,7 +441,8 @@ pub fn resolve_timezone(name: &str) -> Option<String> {
     let lower = cleaned.to_lowercase();
 
     if lower.contains('/') {
-        if cleaned.parse::<Tz>().is_ok() {
+        let parser = IanaParser::new();
+        if !parser.parse(cleaned).is_unknown() {
             return Some(cleaned.to_string());
         }
     }
