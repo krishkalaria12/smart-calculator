@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 async-trait = "0.1.89"
+chrono = "0.4.44"
 fixed_decimal = { version = "0.7.1", features = ["ryu"] }
 icu = "2.1.1"
 iso_currency = "0.5.3"

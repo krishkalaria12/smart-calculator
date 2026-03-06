@@ -141,3 +141,22 @@ pub enum Intent {
         expression: String,
     },
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum RelativeDirection {
+    Next,
+    Last,
+    This,
+}
+
+impl RelativeDirection {
+    pub fn from_str(s: &str) -> Option<Self> {
+        match s.to_lowercase().as_str() {
+            "next" => Some(Self::Next),
+            "last" => Some(Self::Last),
+            "this" => Some(Self::This),
+            _ => None,
+        }
+    }
+}

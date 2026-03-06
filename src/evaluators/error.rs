@@ -13,6 +13,9 @@ pub enum EvaluatorError {
 
     #[error("Crypto conversion failed: {0}")]
     CryptoConversionFailed(String),
+
+    #[error("Date evaluation failed: {0}")]
+    DateEvaluationFailed(String),
 }
 
 impl Serialize for EvaluatorError {

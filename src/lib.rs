@@ -10,7 +10,10 @@ use std::sync::Arc;
 
 use crate::{
     error::{Error, Result},
-    evaluators::currency::{evaluate_crypto, evaluate_currency},
+    evaluators::{
+        currency::{evaluate_crypto, evaluate_currency},
+        date::evaluate_date,
+    },
     parser::detect_intent,
     provider::DefaultProvider,
     types::{AnswerType, CalculatorResult, Config, Intent, ResultType},
@@ -59,6 +62,9 @@ pub async fn calculate(input: &str, options: Option<Config>) -> Result<Calculato
                 formatted: parsed.to_string(),
                 metadata: None,
             })
+        }
+        Intent::Date { query } => {
+            evaluate_date(query).map_err(|err| Error::Evaluation(err.to_string()))
         }
         other => Err(Error::UnsupportedIntent(format!("{other:?}"))),
     }

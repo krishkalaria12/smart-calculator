@@ -3,7 +3,9 @@ use crate::{
     types::Intent,
 };
 
-use super::normalize::{REGEXES, normalize_conversion_input, normalize_whitespace};
+use super::normalize::{
+    REGEXES, date_intent_regexes, normalize_conversion_input, normalize_whitespace,
+};
 
 pub fn detect_intent(input: &str) -> Intent {
     let trimmed = normalize_whitespace(input);
@@ -11,6 +13,10 @@ pub fn detect_intent(input: &str) -> Intent {
         return Intent::Math {
             expression: "0".to_string(),
         };
+    }
+
+    if let Some(intent) = try_date_intent(trimmed.clone()) {
+        return intent;
     }
 
     if let Some(intent) = try_currency_or_crypto_intent(&trimmed) {
@@ -53,6 +59,19 @@ fn try_currency_or_crypto_intent(input: &str) -> Option<Intent> {
         if let Some(to) = to_fiat {
             return Some(Intent::Currency { amount, from, to });
         }
+    }
+
+    None
+}
+
+pub fn try_date_intent(input: String) -> Option<Intent> {
+    let normalized = normalize_whitespace(&input).to_lowercase();
+    let is_date_related = date_intent_regexes()
+        .iter()
+        .any(|pattern| pattern.is_match(&normalized));
+
+    if is_date_related {
+        return Some(Intent::Date { query: input });
     }
 
     None
