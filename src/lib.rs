@@ -80,16 +80,5 @@ pub async fn calculate(input: &str, options: Option<Config>) -> Result<Calculato
             options.precision(),
         )
         .map_err(|err| Error::Evaluation(err.to_string())),
-        Intent::Date { query } => {
-            evaluate_date(query).map_err(|err| Error::Evaluation(err.to_string()))
-        }
-        Intent::Unit {
-            amount,
-            from,
-            to,
-            ..
-        } => evaluate_unit(amount, from, to, options.locale().clone(), options.precision())
-            .map_err(|err| Error::Evaluation(err.to_string())),
-        other => Err(Error::UnsupportedIntent(format!("{other:?}"))),
     }
 }
