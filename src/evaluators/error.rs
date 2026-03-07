@@ -16,6 +16,12 @@ pub enum EvaluatorError {
 
     #[error("Date evaluation failed: {0}")]
     DateEvaluationFailed(String),
+
+    #[error("Math evaluation failed: {0}")]
+    MathEvaluationFailed(String),
+
+    #[error("Invalid {0}: {0}")]
+    Invalid(String, String),
 }
 
 impl Serialize for EvaluatorError {

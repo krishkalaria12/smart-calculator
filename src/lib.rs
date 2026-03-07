@@ -13,10 +13,11 @@ use crate::{
     evaluators::{
         currency::{evaluate_crypto, evaluate_currency},
         date::evaluate_date,
+        math::evaluate_math,
     },
     parser::detect_intent,
     provider::DefaultProvider,
-    types::{AnswerType, CalculatorResult, Config, Intent, ResultType},
+    types::{CalculatorResult, Config, Intent},
 };
 
 pub async fn calculate(input: &str, options: Option<Config>) -> Result<CalculatorResult> {
@@ -53,16 +54,12 @@ pub async fn calculate(input: &str, options: Option<Config>) -> Result<Calculato
         )
         .await
         .map_err(|err| Error::Evaluation(err.to_string())),
-        Intent::Math { expression } => {
-            let parsed = expression.parse::<f64>().unwrap_or(0.0);
-            Ok(CalculatorResult {
-                res_type: ResultType::Math,
-                input: expression,
-                result: AnswerType::Number(parsed),
-                formatted: parsed.to_string(),
-                metadata: None,
-            })
-        }
+        Intent::Math { expression } => evaluate_math(
+            expression,
+            options.locale().clone(),
+            options.precision(),
+        )
+        .map_err(|err| Error::Evaluation(err.to_string())),
         Intent::Date { query } => {
             evaluate_date(query).map_err(|err| Error::Evaluation(err.to_string()))
         }
