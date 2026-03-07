@@ -1,5 +1,6 @@
 use crate::{
     data::currencies::{resolve_crypto, resolve_fiat},
+    data::units::lookup_unit,
     types::Intent,
 };
 
@@ -20,6 +21,10 @@ pub fn detect_intent(input: &str) -> Intent {
     }
 
     if let Some(intent) = try_currency_or_crypto_intent(&trimmed) {
+        return intent;
+    }
+
+    if let Some(intent) = try_unit_intent(&trimmed) {
         return intent;
     }
 
@@ -59,6 +64,42 @@ fn try_currency_or_crypto_intent(input: &str) -> Option<Intent> {
         if let Some(to) = to_fiat {
             return Some(Intent::Currency { amount, from, to });
         }
+    }
+
+    None
+}
+
+fn try_unit_intent(input: &str) -> Option<Intent> {
+    let normalized = normalize_conversion_input(input);
+    let caps = REGEXES
+        .unit_pattern
+        .captures(&normalized)
+        .or_else(|| REGEXES.unit_pattern_no_space.captures(&normalized))?;
+
+    let amount = caps.get(1)?.as_str().replace(',', "").parse::<f64>().ok()?;
+    let from_token = caps.get(2)?.as_str().trim().to_lowercase();
+    let to_token = caps.get(3)?.as_str().trim().to_lowercase();
+
+    let from_unit = lookup_unit(&from_token);
+    let to_unit = lookup_unit(&to_token);
+
+    if let (Some(from), Some(to)) = (from_unit, to_unit) {
+        if from.category_name == to.category_name {
+            return Some(Intent::Unit {
+                amount,
+                from: from_token,
+                to: to_token,
+                category: from.category_name.to_string(),
+            });
+        }
+    }
+
+    if resolve_fiat(&from_token).is_some() || resolve_crypto(&from_token).is_some() {
+        return None;
+    }
+
+    if resolve_fiat(&to_token).is_some() || resolve_crypto(&to_token).is_some() {
+        return None;
     }
 
     None
