@@ -6,7 +6,9 @@ edition = "2024"
 [dependencies]
 async-trait = "0.1.89"
 chrono = "0.4.44"
+chrono-tz = "0.10.4"
 fixed_decimal = { version = "0.7.1", features = ["ryu"] }
+iana-time-zone = "0.1.65"
 icu = "2.1.1"
 iso_currency = "0.5.3"
 papaya = "0.2.3"
