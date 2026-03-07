@@ -142,7 +142,7 @@ impl<'a> MathParser<'a> {
 
         loop {
             match self.peek() {
-                Some('*') => {
+                Some('*') if !self.match_pair('*', '*') => {
                     self.consume(Some('*'))?;
                     left *= self.parse_exponentiation()?;
                 }
@@ -177,6 +177,12 @@ impl<'a> MathParser<'a> {
 
         if self.peek() == Some('^') {
             self.consume(Some('^'))?;
+            let exponent = self.parse_exponentiation()?;
+            return Ok(base.powf(exponent));
+        }
+
+        if self.peek() == Some('*') && self.match_pair('*', '*') {
+            self.pos += 2;
             let exponent = self.parse_exponentiation()?;
             return Ok(base.powf(exponent));
         }

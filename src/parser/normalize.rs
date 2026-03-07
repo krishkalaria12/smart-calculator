@@ -97,11 +97,11 @@ pub static REGEXES: LazyLock<AppRegexes> = LazyLock::new(|| {
 
         // --- Unit ---
         unit_pattern: Regex::new(
-            r#"(?i)^(-?[\d.,]+)\s*([a-z°/µμ'"2-3]+(?:\s+[a-z]+(?:\s+[a-z]+)?)?)\s+(?:to|in|into|as|=)\s+([a-z°/µμ'"2-3]+(?:\s+[a-z]+(?:\s+[a-z]+)?)?)$"#,
+            r#"(?i)^(-?[\d.,]+)\s*([a-z°/µμ'"2-3²³]+(?:\s+[a-z]+(?:\s+[a-z]+)?)?)\s+(?:to|in|into|as|=)\s+([a-z°/µμ'"2-3²³]+(?:\s+[a-z]+(?:\s+[a-z]+)?)?)$"#,
         )
         .expect("Invalid unit conversion pattern"),
         unit_pattern_no_space: Regex::new(
-            r#"(?i)^(-?[\d.,]+)([a-z0-9°/µμ'"]+)\s+(?:to|in|into|as)\s+([a-z0-9°/µμ'"/]+(?:\s+[a-z]+)?)$"#,
+            r#"(?i)^(-?[\d.,]+)([a-z0-9°/µμ'"²³]+)\s+(?:to|in|into|as)\s+([a-z0-9°/µμ'"/²³]+(?:\s+[a-z]+)?)$"#,
         )
         .expect("Invalid compact unit conversion pattern"),
 
