@@ -1,7 +1,15 @@
 [package]
 name = "smart-calculator"
-version = "1.0.0"
+version = "1.0.1"
 edition = "2024"
+description = "Natural-language calculator for math, units, time zones, dates, fiat, and crypto conversions"
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/krishkalaria12/smart-calculator"
+homepage = "https://github.com/krishkalaria12/smart-calculator"
+documentation = "https://docs.rs/smart-calculator"
+keywords = ["calculator", "conversion", "currency", "parser", "math"]
+categories = ["mathematics", "parser-implementations", "value-formatting"]
 
 [dependencies]
 async-trait = "0.1.89"

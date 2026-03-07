@@ -4,6 +4,10 @@ Natural-language calculation for Rust.
 
 `smart-calculator` takes a single string like `sqrt(144)`, `3 km to m`, `time in tokyo`, or `100 usd to inr` and returns a structured result with the detected intent, raw value, formatted output, and optional metadata.
 
+- Crate: `smart-calculator`
+- docs.rs: <https://docs.rs/smart-calculator>
+- crates.io: <https://crates.io/crates/smart-calculator>
+
 ## What It Does
 
 | Capability | Examples |
@@ -27,15 +31,29 @@ Natural-language calculation for Rust.
 
 ## Quick Start
 
-### 1. Add the crate locally
+### 1. Add the crate
 
-If you are working in a workspace or from source, add it as a path dependency:
+Install it from crates.io:
+
+```bash
+cargo add smart-calculator
+```
+
+If your app does not already use an async runtime, add Tokio for the examples below:
+
+```bash
+cargo add tokio --features macros,rt-multi-thread
+```
+
+Or add the dependencies manually to `Cargo.toml`:
 
 ```toml
 [dependencies]
-smart-calculator = { path = "../smart-calculator" }
+smart-calculator = "1.0.1"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 ```
+
+`smart-calculator` exposes an async API. You only need Tokio if your application does not already have an async runtime.
 
 ### 2. Call `calculate`
 
