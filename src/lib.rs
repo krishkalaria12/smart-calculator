@@ -14,6 +14,7 @@ use crate::{
         currency::{evaluate_crypto, evaluate_currency},
         date::evaluate_date,
         math::evaluate_math,
+        time::evaluate_time,
         unit::evaluate_unit,
     },
     parser::detect_intent,
@@ -55,8 +56,26 @@ pub async fn calculate(input: &str, options: Option<Config>) -> Result<Calculato
         )
         .await
         .map_err(|err| Error::Evaluation(err.to_string())),
-        Intent::Math { expression } => evaluate_math(
-            expression,
+        Intent::Math { expression } => {
+            evaluate_math(expression, options.locale().clone(), options.precision())
+                .map_err(|err| Error::Evaluation(err.to_string()))
+        }
+        Intent::Date { query } => {
+            evaluate_date(query).map_err(|err| Error::Evaluation(err.to_string()))
+        }
+        Intent::Time {
+            query,
+            from,
+            to,
+            time,
+        } => evaluate_time(query, from, to, time, options.timezone().clone())
+            .map_err(|err| Error::Evaluation(err.to_string())),
+        Intent::Unit {
+            amount, from, to, ..
+        } => evaluate_unit(
+            amount,
+            from,
+            to,
             options.locale().clone(),
             options.precision(),
         )

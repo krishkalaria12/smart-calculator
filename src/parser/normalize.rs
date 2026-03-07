@@ -6,6 +6,18 @@ pub struct AppRegexes {
     pub whitespace: Regex,
     pub prefixes: Regex,
 
+    // --- Time ---
+    pub time_in_primary: Regex,
+    pub time_in_secondary: Regex,
+    pub time_in_now: Regex,
+    pub time_explicit_convert: Regex,
+    pub time_convert: Regex,
+    pub time_now_query: Regex,
+    pub time_place_suffix: Regex,
+    pub time_place_prefix: Regex,
+    pub time_place_simple_prefix: Regex,
+    pub time_place_suffix_cleanup: Regex,
+
     // --- Currency & Conversion ---
     pub conversion_pattern: Regex,
     pub currency_symbol_prefix: Regex,
@@ -46,6 +58,34 @@ pub static REGEXES: LazyLock<AppRegexes> = LazyLock::new(|| {
 
         prefixes: Regex::new(r"(?i)^(?:convert|how much is|what(?:'s|s| is))\s+")
             .expect("Invalid prefix removal regex"),
+
+        // --- Time ---
+        time_in_primary: Regex::new(
+            r"(?i)^(?:what(?:'s| is) )?(?:the )?(?:current )?time (?:in|at) (.+)$",
+        )
+        .expect("Invalid primary time-in regex"),
+        time_in_secondary: Regex::new(
+            r"(?i)^(?:what time is it|whats the time|what is the time|current time|time now) (?:in|at) (.+)$",
+        )
+        .expect("Invalid secondary time-in regex"),
+        time_in_now: Regex::new(r"(?i)^(?:now|current time) in (.+)$")
+            .expect("Invalid time-now regex"),
+        time_explicit_convert: Regex::new(
+            r"(?i)^(midnight|noon|\d{1,2}(?::\d{2})?(?:\s*(?:am|pm))?)\s+(?:in\s+)?(.+?)\s+to\s+(.+?)(?:\s+time)?$",
+        )
+        .expect("Invalid explicit time conversion regex"),
+        time_convert: Regex::new(r"(?i)^(.+?) to (.+?)(?: time)?$")
+            .expect("Invalid time conversion regex"),
+        time_now_query: Regex::new(r"(?i)^(?:what(?:'s| is) )?(?:the )?(?:current )?time(?: now)?$")
+            .expect("Invalid time-now query regex"),
+        time_place_suffix: Regex::new(r"(?i)^(.+?)\s+(?:time|now|time now)$")
+            .expect("Invalid time-place suffix regex"),
+        time_place_prefix: Regex::new(r"(?i)^(?:time|current time|time now|now)\s+(?:in|at)\s+")
+            .expect("Invalid time-place prefix regex"),
+        time_place_simple_prefix: Regex::new(r"(?i)^(?:in|at)\s+")
+            .expect("Invalid simple time-place prefix regex"),
+        time_place_suffix_cleanup: Regex::new(r"(?i)\s+(?:time|now|time now)$")
+            .expect("Invalid time-place suffix cleanup regex"),
 
         // --- Currency & Conversion ---
         conversion_pattern: Regex::new(
@@ -176,4 +216,22 @@ pub fn normalize_conversion_input(input: &str) -> String {
         .currency_symbol_prefix
         .replace(&normalized, "$2 $1")
         .into_owned()
+}
+
+pub fn normalize_time_place(input: &str) -> String {
+    let normalized = normalize_whitespace(input);
+    let no_prefix = REGEXES
+        .time_place_prefix
+        .replace(&normalized, "")
+        .into_owned();
+    let no_simple_prefix = REGEXES
+        .time_place_simple_prefix
+        .replace(&no_prefix, "")
+        .into_owned();
+
+    REGEXES
+        .time_place_suffix_cleanup
+        .replace(&no_simple_prefix, "")
+        .trim()
+        .to_string()
 }

@@ -17,6 +17,9 @@ pub enum EvaluatorError {
     #[error("Date evaluation failed: {0}")]
     DateEvaluationFailed(String),
 
+    #[error("Time evaluation failed: {0}")]
+    TimeEvaluationFailed(String),
+
     #[error("Math evaluation failed: {0}")]
     MathEvaluationFailed(String),
 
