@@ -15,6 +15,7 @@ use crate::{
         date::evaluate_date,
         math::evaluate_math,
         time::evaluate_time,
+        unit::evaluate_unit,
     },
     parser::detect_intent,
     provider::DefaultProvider,
@@ -69,6 +70,15 @@ pub async fn calculate(input: &str, options: Option<Config>) -> Result<Calculato
             time,
         } => evaluate_time(query, from, to, time, options.timezone().clone())
             .map_err(|err| Error::Evaluation(err.to_string())),
-        other => Err(Error::UnsupportedIntent(format!("{other:?}"))),
+        Intent::Unit {
+            amount, from, to, ..
+        } => evaluate_unit(
+            amount,
+            from,
+            to,
+            options.locale().clone(),
+            options.precision(),
+        )
+        .map_err(|err| Error::Evaluation(err.to_string())),
     }
 }

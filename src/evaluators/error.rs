@@ -23,6 +23,9 @@ pub enum EvaluatorError {
     #[error("Math evaluation failed: {0}")]
     MathEvaluationFailed(String),
 
+    #[error("Unit conversion failed: {0}")]
+    UnitConversionFailed(String),
+
     #[error("Invalid {0}: {0}")]
     Invalid(String, String),
 }

@@ -22,6 +22,10 @@ pub struct AppRegexes {
     pub conversion_pattern: Regex,
     pub currency_symbol_prefix: Regex,
 
+    // --- Unit ---
+    pub unit_pattern: Regex,
+    pub unit_pattern_no_space: Regex,
+
     // --- Time: Relative & Phrases ---
     pub time_relative_simple: Regex,
     pub time_relative_complex: Regex,
@@ -90,6 +94,16 @@ pub static REGEXES: LazyLock<AppRegexes> = LazyLock::new(|| {
 
         currency_symbol_prefix: Regex::new(r"^([$€£¥₹₩₽₺₦₵₪฿])\s*([\d.,]+)")
             .expect("Invalid currency symbol-prefix regex"),
+
+        // --- Unit ---
+        unit_pattern: Regex::new(
+            r#"(?i)^(-?[\d.,]+)\s*([a-z°/µμ'"2-3]+(?:\s+[a-z]+(?:\s+[a-z]+)?)?)\s+(?:to|in|into|as|=)\s+([a-z°/µμ'"2-3]+(?:\s+[a-z]+(?:\s+[a-z]+)?)?)$"#,
+        )
+        .expect("Invalid unit conversion pattern"),
+        unit_pattern_no_space: Regex::new(
+            r#"(?i)^(-?[\d.,]+)([a-z0-9°/µμ'"]+)\s+(?:to|in|into|as)\s+([a-z0-9°/µμ'"/]+(?:\s+[a-z]+)?)$"#,
+        )
+        .expect("Invalid compact unit conversion pattern"),
 
         // --- Time: Relative & Phrases ---
         time_relative_simple: Regex::new(r"(?i)^(today|now|tomorrow|yesterday)$")
