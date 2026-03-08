@@ -1,12 +1,10 @@
 use fixed_decimal::{Decimal as FixedDecimal, FloatPrecision};
-use icu::decimal::DecimalFormatter;
-use icu::locale::Locale;
-use icu::locale::locale;
 use serde_json::json;
 use std::collections::HashMap;
 
 use crate::data::units::{convert_unit, lookup_unit};
 use crate::evaluators::error::{EvaluatorError, Result};
+use crate::formatting::{MAX_DISPLAY_FRACTION_DIGITS, format_display_number, normalize_locale};
 use crate::types::{AnswerType, CalculatorResult, ResultType};
 
 const DEFAULT_PRECISION: u8 = 10;
@@ -39,7 +37,7 @@ pub fn evaluate_unit(
         convert_unit(amount, &from, &to).map_err(EvaluatorError::UnitConversionFailed)?;
     let rounded = round_to_significant_digits(converted, precision);
     let numeric =
-        format_localized_number(rounded, &locale, precision).unwrap_or_else(|| rounded.to_string());
+        format_display_number(rounded, &locale, precision.min(MAX_DISPLAY_FRACTION_DIGITS));
     let formatted = format!("{numeric} {}", to.def.name);
 
     let mut metadata = HashMap::new();
@@ -57,13 +55,6 @@ pub fn evaluate_unit(
     })
 }
 
-fn normalize_locale(locale: Option<String>) -> String {
-    locale
-        .unwrap_or_else(|| "en-US".to_string())
-        .trim()
-        .replace('_', "-")
-}
-
 fn round_to_significant_digits(value: f64, precision: u8) -> f64 {
     if !value.is_finite() || value == 0.0 {
         return value;
@@ -73,15 +64,4 @@ fn round_to_significant_digits(value: f64, precision: u8) -> f64 {
         .ok()
         .and_then(|decimal| decimal.to_string().parse::<f64>().ok())
         .unwrap_or(value)
-}
-
-fn format_localized_number(value: f64, locale_str: &str, precision: u8) -> Option<String> {
-    let locale = locale_str
-        .parse::<Locale>()
-        .ok()
-        .unwrap_or(locale!("en-US"));
-    let formatter = DecimalFormatter::try_new(locale.into(), Default::default()).ok()?;
-    let decimal =
-        FixedDecimal::try_from_f64(value, FloatPrecision::SignificantDigits(precision)).ok()?;
-    Some(format!("{}", formatter.format(&decimal)))
 }

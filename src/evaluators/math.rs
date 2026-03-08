@@ -1,12 +1,10 @@
 use fixed_decimal::{Decimal as FixedDecimal, FloatPrecision};
-use icu::decimal::DecimalFormatter;
-use icu::locale::Locale;
-use icu::locale::locale;
 use serde_json::{Value, json};
 use std::collections::HashMap;
 
 use crate::data::math::{CONSTANTS, FUNCTIONS, FUNCTIONS2, Number};
 use crate::evaluators::error::{EvaluatorError, Result};
+use crate::formatting::{MAX_DISPLAY_FRACTION_DIGITS, format_display_number, normalize_locale};
 use crate::parser::REGEXES;
 use crate::types::{AnswerType, CalculatorResult, ResultType};
 
@@ -583,13 +581,6 @@ fn normalize_precision(precision: Option<u8>) -> u8 {
     precision.unwrap_or(DEFAULT_PRECISION).clamp(1, 21)
 }
 
-fn normalize_locale(locale: Option<String>) -> String {
-    locale
-        .unwrap_or_else(|| "en-US".to_string())
-        .trim()
-        .replace('_', "-")
-}
-
 fn round_to_significant_digits(value: Number, precision: u8) -> Number {
     if !value.is_finite() || value == 0.0 {
         return value;
@@ -606,18 +597,11 @@ fn format_math_value(value: Number, locale_str: &str, precision: u8) -> String {
         return value.to_string();
     }
 
-    format_localized_number(value, locale_str, precision).unwrap_or_else(|| value.to_string())
-}
-
-fn format_localized_number(value: Number, locale_str: &str, precision: u8) -> Option<String> {
-    let locale = locale_str
-        .parse::<Locale>()
-        .ok()
-        .unwrap_or(locale!("en-US"));
-    let formatter = DecimalFormatter::try_new(locale.into(), Default::default()).ok()?;
-    let decimal =
-        FixedDecimal::try_from_f64(value, FloatPrecision::SignificantDigits(precision)).ok()?;
-    Some(format!("{}", formatter.format(&decimal)))
+    format_display_number(
+        value,
+        locale_str,
+        precision.min(MAX_DISPLAY_FRACTION_DIGITS),
+    )
 }
 
 fn build_math_metadata(result: Number, normalized_expression: &str) -> HashMap<String, Value> {

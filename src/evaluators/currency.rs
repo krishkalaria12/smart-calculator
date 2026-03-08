@@ -1,7 +1,4 @@
 use fixed_decimal::{Decimal as FixedDecimal, FloatPrecision};
-use icu::decimal::DecimalFormatter;
-use icu::locale::Locale;
-use icu::locale::locale;
 use iso_currency::Currency;
 use serde_json::json;
 use std::collections::HashMap;
@@ -10,6 +7,7 @@ use crate::data::currencies::CRYPTO_CURRENCIES;
 use crate::{
     data::currencies::FIAT_CURRENCIES,
     evaluators::error::{EvaluatorError, Result},
+    formatting::{MAX_DISPLAY_FRACTION_DIGITS, format_display_number, normalize_locale},
     types::{AnswerType, CalculatorResult, RateProvider, ResultType},
 };
 
@@ -103,11 +101,6 @@ fn normalize_code(code: String) -> String {
     code.trim().to_uppercase()
 }
 
-fn normalize_locale(locale: Option<String>) -> String {
-    let raw = locale.unwrap_or_else(|| "en-US".to_string());
-    raw.trim().replace('_', "-")
-}
-
 fn require_provider(provider: Option<&dyn RateProvider>) -> Result<&dyn RateProvider> {
     provider.ok_or_else(|| EvaluatorError::RequiredParameter("provider".to_string()))
 }
@@ -124,14 +117,20 @@ fn round_to_significant_digits(value: f64, precision: u8) -> f64 {
 }
 
 fn format_asset_value(value: f64, code: &str, locale_str: &str, precision: u8) -> String {
-    let numeric =
-        format_localized_number(value, locale_str, precision).unwrap_or_else(|| value.to_string());
+    let numeric = format_display_number(
+        value,
+        locale_str,
+        precision.min(MAX_DISPLAY_FRACTION_DIGITS),
+    );
     format!("{numeric} {code}")
 }
 
 fn format_currency_value(value: f64, code: &str, locale_str: &str, precision: u8) -> String {
-    let numeric =
-        format_localized_number(value, locale_str, precision).unwrap_or_else(|| value.to_string());
+    let numeric = format_display_number(
+        value,
+        locale_str,
+        precision.min(MAX_DISPLAY_FRACTION_DIGITS),
+    );
 
     match Currency::from_code(code) {
         Some(currency) => {
@@ -144,17 +143,6 @@ fn format_currency_value(value: f64, code: &str, locale_str: &str, precision: u8
         }
         None => format!("{numeric} {code}"),
     }
-}
-
-fn format_localized_number(value: f64, locale_str: &str, precision: u8) -> Option<String> {
-    let locale = locale_str
-        .parse::<Locale>()
-        .ok()
-        .unwrap_or(locale!("en-US"));
-    let formatter = DecimalFormatter::try_new(locale.into(), Default::default()).ok()?;
-    let decimal =
-        FixedDecimal::try_from_f64(value, FloatPrecision::SignificantDigits(precision)).ok()?;
-    Some(format!("{}", formatter.format(&decimal)))
 }
 
 fn lookup_fiat_name(code: &str) -> String {

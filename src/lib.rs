@@ -1,6 +1,7 @@
 pub mod data;
 pub mod error;
 pub mod evaluators;
+mod formatting;
 pub mod http;
 pub mod parser;
 pub mod provider;
