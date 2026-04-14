@@ -20,8 +20,27 @@ pub const DAY_NAMES: [&str; 7] = [
     "saturday",
 ];
 
+fn normalize_day_token<'a>(token: &'a str) -> Option<&'a str> {
+    match token {
+        "mon" => Some("monday"),
+        "tue" | "tues" => Some("tuesday"),
+        "wed" => Some("wednesday"),
+        "thu" | "thur" | "thurs" => Some("thursday"),
+        "fri" => Some("friday"),
+        "sat" => Some("saturday"),
+        "sun" => Some("sunday"),
+        "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday"
+        | "sunday" => Some(token),
+        _ => None,
+    }
+}
+
 pub fn evaluate_date(query: String) -> Result<CalculatorResult> {
-    let normalized = query.trim().to_lowercase();
+    let normalized = query
+        .trim()
+        .to_lowercase()
+        .trim_end_matches(['?', '!', '.'])
+        .to_string();
     let now = Local::now();
 
     if is_current_date_query(&normalized) {
@@ -33,6 +52,22 @@ pub fn evaluate_date(query: String) -> Result<CalculatorResult> {
     }
 
     if let Some(date) = parse_relative_phrase(&normalized, now) {
+        return Ok(format_date_result(query, date, None));
+    }
+
+    if let Some(date) = parse_target_date_query(&normalized, now) {
+        return Ok(format_date_result(query, date, None));
+    }
+
+    if let Some(date) = parse_weekday_only(&normalized, now) {
+        return Ok(format_date_result(query, date, None));
+    }
+
+    if let Some(date) = parse_named_date_anchor(&normalized, now) {
+        return Ok(format_date_result(query, date, None));
+    }
+
+    if let Some(date) = parse_compound_relative(&normalized, now) {
         return Ok(format_date_result(query, date, None));
     }
 
@@ -99,10 +134,16 @@ fn is_current_date_query(input: &str) -> bool {
 
 fn parse_simple_relative(input: &str, now: DateTime<Local>) -> Option<DateTime<Local>> {
     match input {
+        "today" | "the today" => Some(now),
+        "now" | "the now" => Some(now),
         "tomorrow" => Some(now + Duration::days(1)),
+        "tmr" | "tmrw" | "the tomorrow" => Some(now + Duration::days(1)),
         "yesterday" => Some(now - Duration::days(1)),
+        "yday" | "the yesterday" => Some(now - Duration::days(1)),
         "day after tomorrow" => Some(now + Duration::days(2)),
+        "day after tmr" => Some(now + Duration::days(2)),
         "day before yesterday" => Some(now - Duration::days(2)),
+        "day before yday" => Some(now - Duration::days(2)),
         _ => None,
     }
 }
@@ -111,9 +152,10 @@ fn parse_relative_phrase(input: &str, now: DateTime<Local>) -> Option<DateTime<L
     let caps = REGEXES.time_relative_phrase.captures(input)?;
 
     let direction = RelativeDirection::from_str(caps.get(1)?.as_str())?;
-    let target = caps.get(2)?.as_str().to_lowercase();
+    let raw_target = caps.get(2)?.as_str().to_lowercase();
+    let target = normalize_day_token(&raw_target).unwrap_or(raw_target.as_str());
 
-    match target.as_str() {
+    match target {
         "week" => {
             let amount = match direction {
                 RelativeDirection::Next => 1,
@@ -121,6 +163,12 @@ fn parse_relative_phrase(input: &str, now: DateTime<Local>) -> Option<DateTime<L
                 RelativeDirection::This => 0,
             };
             Some(apply_offset(now, amount, "week"))
+        }
+        "weekend" => {
+            let friday_idx = DAY_NAMES
+                .iter()
+                .position(|day| *day == "friday")? as i32;
+            Some(get_relative_day(now, friday_idx, direction))
         }
         "month" => {
             let amount = match direction {
@@ -152,10 +200,10 @@ fn parse_duration_offset(input: &str, now: DateTime<Local>) -> Option<DateTime<L
     let unit = caps.get(2)?.as_str();
     let direction = caps.get(3)?.as_str().to_lowercase();
 
-    let base = if direction == "from tomorrow" {
-        now + Duration::days(1)
-    } else {
-        now
+    let base = match direction.as_str() {
+        "from tomorrow" => now + Duration::days(1),
+        "from yesterday" => now - Duration::days(1),
+        _ => now,
     };
 
     let signed_amount = if direction == "ago" { -amount } else { amount };
@@ -203,6 +251,88 @@ fn parse_days_between_parts(input: &str) -> Option<(&str, &str)> {
     let start = caps.get(1)?.as_str().trim();
     let end = caps.get(2)?.as_str().trim();
     Some((start, end))
+}
+
+fn parse_target_date_query(input: &str, now: DateTime<Local>) -> Option<DateTime<Local>> {
+    let caps = REGEXES.date_target_query.captures(input)?;
+    let target = caps
+        .get(1)
+        .or_else(|| caps.get(2))?
+        .as_str()
+        .trim()
+        .to_lowercase();
+    parse_flexible_date(&target, now)
+}
+
+fn parse_weekday_only(input: &str, now: DateTime<Local>) -> Option<DateTime<Local>> {
+    let caps = REGEXES.weekday_only.captures(input)?;
+    let day = caps.get(1)?.as_str().to_lowercase();
+    let day = normalize_day_token(&day).unwrap_or(day.as_str());
+    let target_day = DAY_NAMES.iter().position(|candidate| *candidate == day)? as i32;
+    Some(get_relative_day(now, target_day, RelativeDirection::This))
+}
+
+fn parse_named_date_anchor(input: &str, now: DateTime<Local>) -> Option<DateTime<Local>> {
+    let caps = REGEXES.date_named_anchor.captures(input)?;
+    let anchor = caps.get(1)?.as_str().to_lowercase();
+    let unit = caps.get(2)?.as_str().to_lowercase();
+
+    let is_end = anchor == "end";
+
+    match unit.as_str() {
+        "week" => {
+            if !is_end {
+                let sunday_idx = DAY_NAMES.iter().position(|day| *day == "sunday")? as i32;
+                Some(get_relative_day(now, sunday_idx, RelativeDirection::This))
+            } else {
+                let saturday_idx = DAY_NAMES
+                    .iter()
+                    .position(|day| *day == "saturday")? as i32;
+                Some(get_relative_day(now, saturday_idx, RelativeDirection::This))
+            }
+        }
+        "month" => {
+            let current = now.date_naive();
+            if !is_end {
+                let start = current.with_day(1)?;
+                let naive_dt = start.and_hms_opt(0, 0, 0)?;
+                Local.from_local_datetime(&naive_dt).single()
+            } else {
+                let next_month = now + Months::new(1);
+                let first_of_next = next_month.date_naive().with_day(1)?;
+                let end = first_of_next.checked_sub_days(chrono::Days::new(1))?;
+                let naive_dt = end.and_hms_opt(0, 0, 0)?;
+                Local.from_local_datetime(&naive_dt).single()
+            }
+        }
+        "year" => {
+            let current = now.date_naive();
+            if !is_end {
+                let start = NaiveDate::from_ymd_opt(current.year(), 1, 1)?;
+                let naive_dt = start.and_hms_opt(0, 0, 0)?;
+                Local.from_local_datetime(&naive_dt).single()
+            } else {
+                let end = NaiveDate::from_ymd_opt(current.year(), 12, 31)?;
+                let naive_dt = end.and_hms_opt(0, 0, 0)?;
+                Local.from_local_datetime(&naive_dt).single()
+            }
+        }
+        _ => None,
+    }
+}
+
+fn parse_compound_relative(input: &str, now: DateTime<Local>) -> Option<DateTime<Local>> {
+    let caps = REGEXES.date_compound_relative.captures(input)?;
+    let unit = caps.get(1)?.as_str().to_lowercase();
+    let relation = caps.get(2)?.as_str().to_lowercase();
+
+    let amount = match relation.as_str() {
+        "after next" => 2,
+        "before last" => -2,
+        _ => return None,
+    };
+
+    Some(apply_offset(now, amount, &unit))
 }
 
 fn get_relative_day(
@@ -263,6 +393,14 @@ fn apply_offset(base: DateTime<Local>, amount: i32, unit: &str) -> DateTime<Loca
 }
 
 fn parse_flexible_date(input: &str, now: DateTime<Local>) -> Option<DateTime<Local>> {
+    let normalized = input
+        .trim()
+        .to_lowercase()
+        .trim_end_matches(['?', '!', '.'])
+        .to_string();
+
+    let input = normalized.as_str();
+
     if let Some(simple) = parse_simple_relative(input, now) {
         return Some(simple);
     }
@@ -272,6 +410,22 @@ fn parse_flexible_date(input: &str, now: DateTime<Local>) -> Option<DateTime<Loc
     }
 
     if let Some(date) = parse_relative_phrase(input, now) {
+        return Some(date);
+    }
+
+    if let Some(date) = parse_target_date_query(input, now) {
+        return Some(date);
+    }
+
+    if let Some(date) = parse_weekday_only(input, now) {
+        return Some(date);
+    }
+
+    if let Some(date) = parse_named_date_anchor(input, now) {
+        return Some(date);
+    }
+
+    if let Some(date) = parse_compound_relative(input, now) {
         return Some(date);
     }
 

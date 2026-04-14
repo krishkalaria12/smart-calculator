@@ -153,7 +153,7 @@ pub enum RelativeDirection {
 impl RelativeDirection {
     pub fn from_str(s: &str) -> Option<Self> {
         match s.to_lowercase().as_str() {
-            "next" => Some(Self::Next),
+            "next" | "coming" | "upcoming" => Some(Self::Next),
             "last" => Some(Self::Last),
             "this" => Some(Self::This),
             _ => None,

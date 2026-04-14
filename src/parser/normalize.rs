@@ -42,6 +42,10 @@ pub struct AppRegexes {
     // --- Time: Natural Language Queries ---
     pub current_date_query: Regex,
     pub today_query: Regex,
+    pub date_target_query: Regex,
+    pub weekday_only: Regex,
+    pub date_named_anchor: Regex,
+    pub date_compound_relative: Regex,
     pub days_between: Regex,
 
     // -- Math --
@@ -106,18 +110,22 @@ pub static REGEXES: LazyLock<AppRegexes> = LazyLock::new(|| {
         .expect("Invalid compact unit conversion pattern"),
 
         // --- Time: Relative & Phrases ---
-        time_relative_simple: Regex::new(r"(?i)^(today|now|tomorrow|yesterday)$")
+        time_relative_simple: Regex::new(
+            r"(?i)^(?:the\s+)?(today|now|tomorrow|yesterday|tmr|tmrw|yday)$",
+        )
             .expect("Invalid simple time regex"),
 
-        time_relative_complex: Regex::new(r"(?i)^(date|day after tomorrow|day before yesterday)$")
+        time_relative_complex: Regex::new(
+            r"(?i)^(?:the\s+)?(date|day after tomorrow|day before yesterday|day after tmr|day before yday)$",
+        )
             .expect("Invalid complex relative time regex"),
 
         time_relative_phrase: Regex::new(
-            r"(?i)^(next|last|this)\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday|week|month|year)$"
+            r"(?i)^(next|last|this|coming|upcoming)\s+(monday|mon|tuesday|tue|tues|wednesday|wed|thursday|thu|thur|thurs|friday|fri|saturday|sat|sunday|sun|week|month|year|weekend)$"
         ).expect("Invalid relative date phrase regex"),
 
         time_duration_offset: Regex::new(
-            r"(?i)^(\d+)\s+(days?|weeks?|months?|years?|hours?|minutes?|seconds?)\s+(from now|ago|from today|from tomorrow)$"
+            r"(?i)^(\d+)\s+(days?|weeks?|months?|years?|hours?|minutes?|seconds?)\s+(from now|ago|from today|from tomorrow|from yesterday|later)$"
         ).expect("Invalid duration offset regex"),
 
         time_in_duration: Regex::new(r"(?i)^in\s+(\d+)\s+(days?|weeks?|months?|years?|hours?|minutes?|seconds?)$")
@@ -141,8 +149,28 @@ pub static REGEXES: LazyLock<AppRegexes> = LazyLock::new(|| {
             .expect("Invalid current date query regex"),
 
         today_query: Regex::new(
-            r"(?i)^(?:(?:what(?:'s|s| is))\s+today|(?:what(?:'s|s| is))\s+today'?s date|what day is it|what date is .+|todays date|today'?s date|date today|current date|what day is .+|when is .+)$"
+            r"(?i)^(?:(?:what(?:'s|s| is))\s+today|(?:what(?:'s|s| is))\s+today'?s date|what day is it|what date is it|todays date|today'?s date|date today|current date|(?:what(?:'s|s| is))\s+the\s+date|what is the date(?: today)?)$"
         ).expect("Invalid natural language today query regex"),
+
+        date_target_query: Regex::new(
+            r"(?i)^(?:what\s+(?:day|date)\s+is|date\s+for|day\s+of)\s+(.+)$|^(?:when\s+is)\s+((?:(?:next|last|this|coming|upcoming)\s+(?:monday|mon|tuesday|tue|tues|wednesday|wed|thursday|thu|thur|thurs|friday|fri|saturday|sat|sunday|sun|week|month|year|weekend))|today|tomorrow|yesterday|tmr|tmrw|yday|day\s+after\s+(?:tomorrow|tmr)|day\s+before\s+(?:yesterday|yday)|(?:the\s+)?(?:start|beginning|end)\s+of\s+(?:the\s+)?(?:week|month|year)|\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2})?)$",
+        )
+        .expect("Invalid natural language date-target regex"),
+
+        weekday_only: Regex::new(
+            r"(?i)^(?:the\s+)?(?:on\s+)?(monday|mon|tuesday|tue|tues|wednesday|wed|thursday|thu|thur|thurs|friday|fri|saturday|sat|sunday|sun)$",
+        )
+        .expect("Invalid weekday-only regex"),
+
+        date_named_anchor: Regex::new(
+            r"(?i)^(?:the\s+)?(start|beginning|end)\s+of\s+(?:the\s+)?(week|month|year)$",
+        )
+        .expect("Invalid named date-anchor regex"),
+
+        date_compound_relative: Regex::new(
+            r"(?i)^(?:the\s+)?(week|month|year)\s+(after\s+next|before\s+last)$",
+        )
+        .expect("Invalid compound relative date regex"),
 
         days_between: Regex::new(
             r"(?i)^(?:days?\s+)?(?:between|from)\s+(.+?)\s+(?:to|and|until)\s+(.+)$",
@@ -185,7 +213,7 @@ pub static REGEXES: LazyLock<AppRegexes> = LazyLock::new(|| {
     }
 });
 
-pub fn date_intent_regexes() -> [&'static Regex; 12] {
+pub fn date_intent_regexes() -> [&'static Regex; 16] {
     [
         &REGEXES.time_relative_simple,
         &REGEXES.time_relative_complex,
@@ -198,6 +226,10 @@ pub fn date_intent_regexes() -> [&'static Regex; 12] {
         &REGEXES.iso_date,
         &REGEXES.current_date_query,
         &REGEXES.today_query,
+        &REGEXES.date_target_query,
+        &REGEXES.weekday_only,
+        &REGEXES.date_named_anchor,
+        &REGEXES.date_compound_relative,
         &REGEXES.days_between,
     ]
 }

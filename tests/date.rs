@@ -429,6 +429,66 @@ pub fn cases() -> Vec<Case> {
             "natural: when is next friday",
             ExpectedOutcome::Ok("date"),
         ),
+        case(
+            "when is coming friday",
+            Some("date"),
+            "natural: when is coming friday",
+            ExpectedOutcome::Ok("date"),
+        ),
+        case(
+            "what day is monday?",
+            Some("date"),
+            "natural: weekday with punctuation",
+            ExpectedOutcome::Ok("date"),
+        ),
+        case(
+            "what date is tmr",
+            Some("date"),
+            "natural: short tomorrow",
+            ExpectedOutcome::Ok("date"),
+        ),
+        case(
+            "3 days from yesterday",
+            Some("date"),
+            "relative from yesterday",
+            ExpectedOutcome::Ok("date"),
+        ),
+        case(
+            "2 weeks later",
+            Some("date"),
+            "relative with later",
+            ExpectedOutcome::Ok("date"),
+        ),
+        case(
+            "next weekend",
+            Some("date"),
+            "relative weekend",
+            ExpectedOutcome::Ok("date"),
+        ),
+        case(
+            "start of month",
+            Some("date"),
+            "start of month anchor",
+            ExpectedOutcome::Ok("date"),
+        ),
+        case(
+            "end of year",
+            Some("date"),
+            "end of year anchor",
+            ExpectedOutcome::Ok("date"),
+        ),
+        case(
+            "month after next",
+            Some("date"),
+            "compound relative month",
+            ExpectedOutcome::Ok("date"),
+        ),
+        case(
+            "year before last",
+            Some("date"),
+            "compound relative year",
+            ExpectedOutcome::Ok("date"),
+        ),
     ]
 }
 

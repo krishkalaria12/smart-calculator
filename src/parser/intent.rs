@@ -6,8 +6,8 @@ use crate::{
 };
 
 use super::normalize::{
-    REGEXES, date_intent_regexes, normalize_conversion_input, normalize_time_place,
-    normalize_whitespace,
+    date_intent_regexes, normalize_conversion_input, normalize_time_place, normalize_whitespace,
+    REGEXES,
 };
 
 pub fn detect_intent(input: &str) -> Intent {
@@ -202,7 +202,10 @@ pub fn try_time_intent(input: String) -> Option<Intent> {
 }
 
 pub fn try_date_intent(input: String) -> Option<Intent> {
-    let normalized = normalize_whitespace(&input).to_lowercase();
+    let normalized = normalize_whitespace(&input)
+        .to_lowercase()
+        .trim_end_matches(['?', '!', '.'])
+        .to_string();
     let is_date_related = date_intent_regexes()
         .iter()
         .any(|pattern| pattern.is_match(&normalized));
