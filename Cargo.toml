@@ -1,6 +1,6 @@
 [package]
 name = "smart-calculator"
-version = "1.0.2"
+version = "1.0.3"
 edition = "2024"
 description = "Natural-language calculator for math, units, time zones, dates, fiat, and crypto conversions"
 license = "MIT"

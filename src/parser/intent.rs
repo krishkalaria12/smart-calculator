@@ -202,10 +202,12 @@ pub fn try_time_intent(input: String) -> Option<Intent> {
 }
 
 pub fn try_date_intent(input: String) -> Option<Intent> {
-    let normalized = normalize_whitespace(&input)
-        .to_lowercase()
-        .trim_end_matches(['?', '!', '.'])
-        .to_string();
+    let normalized = normalize_whitespace(&input).to_lowercase();
+    let normalized = if normalized.chars().any(|ch| ch.is_ascii_alphabetic()) {
+        normalized.trim_end_matches(['?', '!', '.']).to_string()
+    } else {
+        normalized.trim_end_matches(['?', '.']).to_string()
+    };
     let is_date_related = date_intent_regexes()
         .iter()
         .any(|pattern| pattern.is_match(&normalized));

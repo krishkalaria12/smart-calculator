@@ -49,7 +49,7 @@ Or add the dependencies manually to `Cargo.toml`:
 
 ```toml
 [dependencies]
-smart-calculator = "1.0.2"
+smart-calculator = "1.0.3"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 ```
 
